@@ -16,9 +16,13 @@ class Clock:
             self.local_time = self.local_time + datetime.timedelta(seconds = drift_rate * 0.001)
 
     # Set the local clock time [To be used for synchronization]
-    def setTime(self, time_dif):
-        self.local_time = self.local_time + datetime.timedelta(seconds = time_dif)
+    def setTime(self, new_time):
+        # self.local_time = self.local_time + datetime.timedelta(seconds = time_dif)
+        self.local_time = new_time
 
     # Obtain the local clock time
     def getTime(self):
         return self.local_time
+
+    def __del__(self):
+        self.t._stop()

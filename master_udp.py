@@ -5,7 +5,11 @@ import threading
 import datetime 
 import socket 
 import time 
+import os
+from clock import Clock
 
+# define a local clock for the master node
+master_clock = Clock()
 
 # datastructure used to store client address and clock data 
 client_data = {} 
@@ -13,7 +17,8 @@ client_data = {}
 master_server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
 average_clock_difference = 0
 sync_round_time = 0
-time_dif_threshold = datetime.timedelta(0, 0, 2000000) # Threshold of 2 seconds
+time_dif_threshold = datetime.timedelta(0, 2) # Threshold of 2 seconds
+synchronized_time = None
 
 
 # nested thread function used to receive clock time from a connected client
@@ -23,7 +28,7 @@ def startRecieveingClockTime(clock_time_string, addr):
 		# clock_time_string = connector.recv(1024).decode() 
 		slave_address = str(addr[0]) + ":" + str(addr[1]) 
 		clock_time = parser.parse(clock_time_string) 
-		clock_time_diff = datetime.datetime.now() - clock_time 
+		clock_time_diff = master_clock.getTime() - clock_time 
 
 		client_data[slave_address] = { 
 					"clock_time"	 : clock_time, 
@@ -43,7 +48,7 @@ def startConnecting():
 		clock_time_string = clock_time_string.decode()
 
 
-		print(str(slave_address[0]) + ":" + str(slave_address[1]) + " got connected successfully") 
+		# print(str(slave_address[0]) + ":" + str(slave_address[1]) + " got connected successfully") 
 
 		current_thread = threading.Thread( 
 						target = startRecieveingClockTime, 
@@ -56,66 +61,80 @@ def getAverageClockDiff():
 
 	current_client_data = client_data.copy() 
 
-	# Create a list of time differences using only those that lie with the given threshold
-	time_difference_list = list(client['time_difference'] for client_addr, client in current_client_data.items() if client["time_difference"] < time_dif_threshold) 
+	# Create a list of time differences using only those that lie within the given threshold
+	time_difference_list = list(client['time_difference'] for client_addr, client in current_client_data.items() if client["time_difference"] < time_dif_threshold and client["time_difference"] > -time_dif_threshold) 
 
-	print(time_difference_list)								
+	# print("Time Difference List: " + str(time_difference_list[0]) + "\n")								
 	sum_of_clock_difference = sum(time_difference_list, datetime.timedelta(0, 0)) 
 
-	_average_clock_difference = sum_of_clock_difference / len(time_difference_list) 
+	_average_clock_difference = sum_of_clock_difference / (len(time_difference_list) + 1) # Plus 1 to account for the time difference of the master node clock
 
 	return _average_clock_difference 
 
 
+# Update the clock of master node
+def updateMasterClock():
+	master_clock.setTime(synchronized_time)
+	print("Updated master node with time:\t\t" + str(synchronized_time))
+
+# Send the synchronized clock time to each slave node
 def sendSynchronizedTime(slave_data):
-	synchronized_time = sync_round_time + average_clock_difference
+	
 	try:
 		master_server.sendto(str(synchronized_time).encode(), slave_data["address"])
+		print("Synchronized time sent to:\t\t" + str(slave_data["address"][0]) + ":" + str(slave_data["address"][1]))
 	except Exception as e: 
-		print("Something went wrong while sending synchronized time through " + str(slave_data["address"])) 
+		print("Something went wrong while sending synchronized time through " + str(slave_data["address"][0]) + ":" + str(slave_data["address"][1])) 
 		print("Error:" + e)
 
 
-# master sync thread function used to generate cycles of clock synchronization in the network
+# Master sync thread function used to generate cycles of clock synchronization in the network
 def synchronizeAllClocks(): 
 
 	while True: 
 		global client_data
-		print("New synchroniztion cycle started.") 
-		print("Number of clients to be synchronized: " + str(len(client_data))) 
-
+		print("New synchroniztion cycle started...") 
+		print("Number of clients to be synchronized:\t" + str(len(client_data)), end="\n\n")
 		if len(client_data) > 0: 
+			# 
+			 
 			global average_clock_difference
 			global sync_round_time
+			global synchronized_time
 			average_clock_difference = getAverageClockDiff()
+			
+			sync_round_time = master_clock.getTime()
+			synchronized_time = sync_round_time + average_clock_difference
+
+			# Spawn a new thread to update the master node's clock with the synchronized time
+			update_master_thread = threading.Thread(target = updateMasterClock, args=())
+			update_master_thread.start()
+
+			# Spawn threads to simultaneously send synchronized times to each slave node
 			slaves_data = [client[1] for client in client_data.items()] 
-			sync_round_time = datetime.datetime.now()
 			with concurrent.futures.ThreadPoolExecutor(max_workers=len(client_data)) as executor:
 				executor.map(sendSynchronizedTime, slaves_data)
 
-			client_data = {} # Clean up the data about each client after every round of synchronization
+			client_data = {} 			# Clean up the data about each client after every round of synchronization
+			update_master_thread.join() # Wait for updation of master node's clock before ending the round of synchronization
 		else : 
 			print("No client data." + " Synchronization not applicable.") 
 
 		print("\n\n") 
 
+		# Start a new synchronization round every 5 seconds
 		time.sleep(5) 
 
-
 # function used to initiate the Clock Server / Master Node 
-def initiateClockServer(port = 8080): 
+def initiateMasterNode(port = 8080): 
 
 	
-	master_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) 
+	master_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) 	
+	master_server.bind(('127.0.0.1', port)) 
 
-	print("Socket at master node created successfully\n") 
-		
-	master_server.bind(('', port)) 
-
-	print("Clock server started...\n") 
+	print("Master node started at 127.0.0.1:" + str(port) + "\n") 
 
 	# start making connections 
-	print("Starting to make connections...\n") 
 	master_thread = threading.Thread(target = startConnecting) 
 	master_thread.start() 
 
@@ -129,5 +148,5 @@ def initiateClockServer(port = 8080):
 # Driver function 
 if __name__ == '__main__': 
 
-	# Trigger the Clock Server 
-	initiateClockServer(port = 8080) 
+	# Trigger the Master Node Clock 
+	initiateMasterNode(port = 8080) 
