@@ -1,7 +1,6 @@
 # Berkeley Clock Synchronization
 
-### Course Project for CS751 
-### [Principles of Concurrent and Parallel Programming] 
+### Course Project for CS751 [Principles of Concurrent and Parallel Programming] 
 
 
 ***
@@ -28,11 +27,11 @@ Our system contains a master node and a set of slave nodes that periodically que
 
 2. Periodically, the master queries all of the slave nodes for their local time and each node replies with their current time.
 
-3. The master then computes the time difference between its local clock and that of each of the slaves [$\delta$ values for each slave].
+3. The master then computes the time difference between its local clock and that of each of the slaves [δ values for each slave].
 
-4. The master computes a fault tolerant average of the $\delta$ values: The master selects the largest set of slaves that do not differ from each other by more than a small quantity ($\gamma$) & averages these $\delta$ values.
+4. The master computes a fault tolerant average of the δ values: The master selects the largest set of slaves that do not differ from each other by more than a small quantity (γ) & averages these δ values.
 
-5. The master asks each slave to correct their respective clocks by sending them the synchronized time obtained by using the fault-tolerant average $\delta$.
+5. The master asks each slave to correct their respective clocks by sending them the synchronized time obtained by using the fault-tolerant average δ.
 
 6. This synchronization procedure is repeated by the master every *T* seconds.
 
@@ -54,7 +53,7 @@ Our system contains a master node and a set of slave nodes that periodically que
 
 * Our implementation uses **UDP-based sockets** for messaging, which speeds up communication because it offers no deliverability guarantees.
 
-* **Robustness to message delay:** The threshold ($\gamma$) for $\delta$ values of each slave guarantee that delayed messages from slaves corresponding to previous rounds are ignored while calculating the average. Moreover, the data structure containing the details of slaves is flushed at the end of each synchronization round. In our implementation, **$\gamma$ = 2 seconds**
+* **Robustness to message delay:** The threshold (γ) for δ values of each slave guarantee that delayed messages from slaves corresponding to previous rounds are ignored while calculating the average. Moreover, the data structure containing the details of slaves is flushed at the end of each synchronization round. In our implementation, **γ = 2 seconds**
 
 * **Robustness to slave halting failures:** The master continues with the synchronization algorithm as long as there is at least slave that sends its time for a given synchronization round.
 
@@ -74,4 +73,4 @@ Our system contains a master node and a set of slave nodes that periodically que
 
 ***
 
-Created with :heart: by [Tezan Sahu](https://www.linkedin.com/in/tezan-sahu/) & [Akash Kumar](https://www.linkedin.com/in/akash981)
+<p align='center'>Created with :heart: by <a href="https://www.linkedin.com/in/tezan-sahu/">Tezan Sahu</a> & <a href="https://www.linkedin.com/in/akash981">Akash Kumar</a></p>
