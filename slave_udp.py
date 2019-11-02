@@ -37,6 +37,7 @@ def initiateSlaveClient(port = 8080):
     server_address = ('127.0.0.1', port)
     # slave_client.connect(server_address) 
 
+
 	# start sending time to server 
     print("Starting to receive time from server\n") 
     send_time_thread = threading.Thread(target = startSendingTime, args = (slave_client, server_address, )) 
