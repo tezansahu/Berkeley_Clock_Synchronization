@@ -17,7 +17,7 @@ Clock synchronization is a method of synchronizing clock values of any two nodes
 
 ## Problem Statement
 
-The variant of the Berkeley Clock Synchronization algorithm implemented by us tries to solve the issue caused in distributed environments due to different unsynchronized local clocks by providing.
+The variant of the Berkeley Clock Synchronization algorithm implemented by us tries to solve the issue caused in distributed environments due to different unsynchronized local clocks by providing a fault-tolerant averaging of time differences.
 
 Our system contains a master node and a set of slave nodes that periodically query master node to get the synchronized time for the system.
 
