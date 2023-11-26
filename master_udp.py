@@ -143,6 +143,9 @@ def initiateMasterNode(port = 8080):
 	sync_thread = threading.Thread(target = synchronizeAllClocks) 
 	sync_thread.start() 
 
+	master_thread.join()
+	sync_thread.join()
+
 
 
 # Driver function 

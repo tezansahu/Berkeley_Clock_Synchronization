@@ -51,7 +51,7 @@ def initiateSlaveNode(master_port = 8080):
     slave_client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)		 
 		
 	# define the master node address
-    server_address = ('127.0.0.1', server_port)
+    server_address = ('127.0.0.1', master_port)
 
     print("Slave node started...", end="\n\n")
 
